@@ -1,1 +1,3 @@
-# Practical_Optimisation
+# Practical Optimisation
+
+Courseworkd module exploring optimisation.
