@@ -1,9 +1,11 @@
 using Printf
 using Statistics
 
+
 function constraint(x::Vector{Float64})
-    return (sum(x) < 15*length(x)/2) & (prod(x) > 0.75)
+    return (sum(x) < 15) & (prod(x) > 0.75) & (minimum(x) >= 0) & (maximum(x) <= 10)
 end
+
 
 function KBF(points::Vector{Vector{Float64}})
     cost = Float64[]
@@ -14,15 +16,9 @@ function KBF(points::Vector{Vector{Float64}})
             denom = sqrt(sum([index*num^2 for (index, num) in enumerate(x)]))
             push!(cost, num/denom)
         else 
-            push!(cost, Inf64)
+            push!(cost, -Inf)
         end
     end
     return cost
 end
 
-
-function standard_P_s(samples::Vector{Vector{Float64}})
-    f = KBF(samples)
-    f_Σ = sum(f)
-    return f ./ f_Σ
-end
