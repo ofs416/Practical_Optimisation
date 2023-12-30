@@ -2,12 +2,12 @@ using Printf
 using Statistics
 
 
-function constraint(x::Vector{Float64})
-    return (sum(x) < 15) & (prod(x) > 0.75) & (minimum(x) >= 0) & (maximum(x) <= 10)
+function constraint(x::Vector{Float64})::Bool
+    return (minimum(x) >= 0) && (maximum(x) <= 10) && (sum(x) < 15) && (prod(x) > 0.75)
 end
 
 
-function KBF(points::Vector{Vector{Float64}})
+function KBF(points::Vector{Vector{Float64}})::Vector{Float64}
     cost = Float64[]
     for x in points
         if constraint(x) 

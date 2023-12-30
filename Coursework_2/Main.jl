@@ -1,37 +1,42 @@
 using Printf
 using Statistics, Distributions
 using Plots
+using BenchmarkTools
 
 include("KBFunc.jl")
 include("GeneticAlgo.jl")
 
 
-function contscatplot(popu, range, objfunc, label::String)
-    contourf(range, range, objfunc, plot_title="Contour Plot", camera=(180, 30), color=:turbo)
-    scatter!(Tuple.(popu), label="Population")
-    savefig("Coursework_2/Figures/iter_" * label * ".png") 
+function contscatplot(popu, range, objfunc, label::String, plots::Bool)
+    if plots
+        contourf(range, range, objfunc, plot_title="Contour Plot", camera=(180, 30), color=:turbo)
+        scatter!(Tuple.(popu), label="Population")
+        savefig("Coursework_2/Figures/iter_" * label * ".png") 
+    end
 end
 
-function GA(pop_size::Int, crossover, mut_prob::Float64)
+function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::Float64
+    iterations = 10000/pop_size
     range = LinRange(0, 10, 1000)
     z = vec([[i,j] for i in range, j in range])
     objfunc = KBF(z)
-    popu = pop_initial(range, pop_size)
-    contscatplot(popu, range, objfunc, string(0))
 
-    f_Σ = Float64[standard_P_s(popu)[2]]
-    for iter in 1:(10000/pop_size)
-        popu, temp = single_iteration(popu,crossover, mut_prob)
-        push!(f_Σ, temp)
-        if iter % 20 == 0
-            contscatplot(popu, range, objfunc, string(iter))
+    popu = pop_initial(range, pop_size)
+    f = KBF(popu)
+    scores = Float64[scoring(f)]
+    contscatplot(popu, range, objfunc, string(0), plots)
+
+    for iter in 1:iterations
+        popu, f = single_iteration(popu, f, crossover, mut_prob)
+        push!(scores, scoring(f))
+        if (iter % 20 == 0)
+            contscatplot(popu, range, objfunc, string(iter), plots)
         end
     end
-    contscatplot(popu, range, objfunc, "final")
-
-    plot(0:(10000/pop_size), f_Σ)
-    savefig("Coursework_2/Figures/f_sum.png") 
-    return f_Σ[end]/pop_size
+        contscatplot(popu, range, objfunc, "final", plots)
+        plot(0:iterations, scores)
+        savefig("Coursework_2/Figures/f_sum.png") 
+    return scores[end]
 end
 
-GA(100, var_crossover, 0.001)
+GA(50, 0.01, var_crossover, score_top5, true)
