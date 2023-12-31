@@ -55,6 +55,20 @@ function roulette_parents(f::Vector{Float64}, prob_method)::Vector{Vector{Int64}
 end
 
 
+function tournament_parents(f::Vector{Float64}, sub_size)::Vector{Vector{Int64}}
+    pop_size = length(f)
+    parents = Vector{Vector{Int64}}()
+    while length(parents) < pop_size
+        sub_pop_f = sample(f, sub_size, replace=false)
+        parent1_f, parent2_f = partialsort(sub_pop_f , 1:2, rev=true)
+        parent1 = findfirst(parent -> parent == parent1_f, f)
+        parent2 = findfirst(parent -> parent == parent2_f, f)
+        push!(parents, [parent1, parent2])
+    end
+    return parents
+end
+
+
 function locus_crossover(bit1::Char, bit2::Char, pos::Int, locus::Int)::Tuple{Char, Char}
     if pos <= locus
         bit1, bit2 = bit2, bit1 
@@ -113,7 +127,7 @@ end
 
 function single_iteration(popu::Vector{Vector{Float64}}, f::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}}
     pop_size = length(popu)
-    selected_parents_indices = roulette_parents(f, rank_Psi)
+    selected_parents_indices = tournament_parents(f, 25) #roulette_parents(f, prop_Psi)
     new_pop = Vector{Vector{Float64}}()
     pair = 1
     while length(new_pop) < pop_size
@@ -122,10 +136,10 @@ function single_iteration(popu::Vector{Vector{Float64}}, f::Vector{Float64}, cro
         end
         parent1, parent2 = popu[selected_parents_indices[pair]]
         offspring1, offspring2 = breed_mut(parent1, parent2, crossover, mut_prob)
-        if (offspring1[1] >= 0) && (offspring1[1] <= 10) && (offspring1[2] >= 0) && (offspring1[2] <= 10) && (length(new_pop) < pop_size)
+        if constraint(offspring1)  && (length(new_pop) < pop_size)
             push!(new_pop, offspring1)
         end
-        if (offspring2[1] >= 0) && (offspring2[1] <= 10) && (offspring2[2] >= 0) && (offspring2[2] <= 10) && (length(new_pop) < pop_size)
+        if constraint(offspring2) && (length(new_pop) < pop_size)
             push!(new_pop, offspring2)
         end
         pair += 1

@@ -40,5 +40,20 @@ function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::
 end
 
 
+#avg = Matrix{Float64}(undef, (5, 3))
+#for (i, pop) in enumerate(20:20:100)
+#    for (j, mut) in enumerate([0.0001, 0.001, 0.01])
+#        println(pop, mut)
+#        for iter in 1:75
+#            global avg[i, j] += GA(pop, mut, var_locus_crossover, score_top5, false)
+#        end
+#    end
+#end
+#avg ./= 75
+#avg
 
-
+avg = 0
+for iter in 1:50 
+    global avg += GA(80, 0.01, var_locus_crossover, score_top5, false)
+end
+println(avg/50)

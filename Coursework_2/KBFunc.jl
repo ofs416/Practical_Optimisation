@@ -21,4 +21,3 @@ function KBF(points::Vector{Vector{Float64}})::Vector{Float64}
     end
     return cost
 end
-
