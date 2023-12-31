@@ -29,7 +29,7 @@ function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::
     for iter in 1:iterations
         popu, f = single_iteration(popu, f, crossover, mut_prob)
         push!(scores, scoring(f))
-        if (iter % 20 == 0)
+        if (iter % 25 == 0)
             contscatplot(popu, range, objfunc, string(iter), plots)
         end
     end
@@ -39,4 +39,5 @@ function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::
     return scores[end]
 end
 
-GA(50, 0.01, var_crossover, score_top5, true)
+
+GA(80, 0.001, var_locus_crossover, score_top5, true)
