@@ -45,8 +45,8 @@ end
 
 
 function roulette_parents(f::Vector{Float64}, prob_method)::Vector{Vector{Int64}}
-    probs = prob_method(f)
-    parents = sample(1:length(f), Weights(probs), (2,50))
+    p_si = prob_method(f)
+    parents = sample(1:length(f), Weights(p_si), (2,50))
     parents = [[a,b] for (a,b) in eachcol(parents)]
     #if 1 in [argmax(f) in pair for pair in parents] == false
     #    pair[1] = [argmax(f), rand(dist, (2, 1))]
@@ -57,16 +57,20 @@ end
 
 function tournament_parents(f::Vector{Float64}, sub_size)::Vector{Vector{Int64}}
     pop_size = length(f)
+    print(pop_size)
     parents = Vector{Vector{Int64}}()
-    while length(parents) < pop_size
+    while (length(parents) < floor(pop_size/2))
         sub_pop_f = sample(f, sub_size, replace=false)
         parent1_f, parent2_f = partialsort(sub_pop_f , 1:2, rev=true)
         parent1 = findfirst(parent -> parent == parent1_f, f)
         parent2 = findfirst(parent -> parent == parent2_f, f)
         push!(parents, [parent1, parent2])
     end
+    println(length(parents))
     return parents
 end
+
+
 
 
 function locus_crossover(bit1::Char, bit2::Char, pos::Int, locus::Int)::Tuple{Char, Char}
@@ -127,7 +131,7 @@ end
 
 function single_iteration(popu::Vector{Vector{Float64}}, f::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}}
     pop_size = length(popu)
-    selected_parents_indices = tournament_parents(f, 25) #roulette_parents(f, prop_Psi)
+    selected_parents_indices = tournament_parents(f, 15) #roulette_parents(f, prop_Psi)
     new_pop = Vector{Vector{Float64}}()
     pair = 1
     while length(new_pop) < pop_size
