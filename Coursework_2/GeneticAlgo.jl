@@ -1,6 +1,7 @@
 using Statistics, StatsBase
 
 include("KBFunc.jl")
+include("Misc.jl")
 
 
 function pop_initial(range, pop_size::Int)::Vector{Vector{Float64}}
@@ -25,12 +26,20 @@ function score_top5(f::Vector{Float64})::Float64
 end
 
 
-function prop_selction(f::Vector{Float64})::Vector{Float64}
+function prop_Psi(f::Vector{Float64})::Vector{Float64}
     f_Σ = sum(f)
     prob = f ./ f_Σ
-    if sum(prob) != 1.00
-        prob[1] += (1-sum(prob))
-    end
+    return prob
+end
+
+
+function rank_Psi(f::Vector{Float64})::Vector{Float64}
+    s = 2
+    n = length(f)
+    r_i = ranking(f) 
+    num = @. s * (n + 1. - 2. * r_i) + 2. * (r_i - 1.)
+    denom = n * (n - 1.)
+    prob = num ./ denom
     return prob
 end
 
@@ -104,7 +113,7 @@ end
 
 function single_iteration(popu::Vector{Vector{Float64}}, f::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}}
     pop_size = length(popu)
-    selected_parents_indices = roulette_parents(f, prop_selction)
+    selected_parents_indices = roulette_parents(f, rank_Psi)
     new_pop = Vector{Vector{Float64}}()
     pair = 1
     while length(new_pop) < pop_size

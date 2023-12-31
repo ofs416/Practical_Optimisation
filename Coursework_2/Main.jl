@@ -16,7 +16,7 @@ function contscatplot(popu, range, objfunc, label::String, plots::Bool)
 end
 
 function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::Float64
-    iterations = 10000/pop_size
+    iterations = floor(10000/pop_size)
     range = LinRange(0, 10, 1000)
     z = vec([[i,j] for i in range, j in range])
     objfunc = KBF(z)
@@ -29,7 +29,7 @@ function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::
     for iter in 1:iterations
         popu, f = single_iteration(popu, f, crossover, mut_prob)
         push!(scores, scoring(f))
-        if (iter % 25 == 0)
+        if (iter % 25 == 0) | (iter in 1:10)
             contscatplot(popu, range, objfunc, string(iter), plots)
         end
     end
@@ -40,4 +40,5 @@ function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::
 end
 
 
-GA(80, 0.001, var_locus_crossover, score_top5, true)
+
+
