@@ -54,8 +54,8 @@ end
 
 #avg = 0
 #for iter in 1:50 
-#    global avg += GA(400, 0.005, var_locus_crossover, score_top5, false)
+#    global avg += GA(200, 0.005, var_locus_crossover, score_top5, false)
 #end
 #println(avg/50)
 
-GA(250, 0.01, var_locus_crossover, score_top5, true)
+GA(1000, 0.01, var_locus_crossover, score_top1, true)
