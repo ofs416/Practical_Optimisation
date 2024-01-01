@@ -4,33 +4,6 @@ include("KBFunc.jl")
 include("Misc.jl")
 
 
-function pop_initial(range, pop_size::Int, dim::Int)::Vector{Vector{Float64}}
-    pops = Vector{Vector{Float64}}()
-    while length(pops) < pop_size
-        sample = vec(rand(range, (dim,)))
-        #if constraint(sample)
-        push!(pops, sample)
-        #end
-    end
-    return pops
-end
-
-
-function score_all(f::Vector{Float64})::Float64
-    return -sum(f) / length(f)
-end
-
-
-function score_top5(f::Vector{Float64})::Float64
-    return -sum(partialsort(f , 1:5, rev=true)) / 5
-end
-
-
-function score_top1(f::Vector{Float64})::Float64
-    return -sum(partialsort(f , 1:1, rev=true))
-end
-
-
 function prop_Psi(f::Vector{Float64})::Vector{Float64}
     f_Σ = sum(f)
     prob = f ./ f_Σ
