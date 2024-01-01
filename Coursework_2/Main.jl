@@ -15,19 +15,20 @@ function contscatplot(popu, range, objfunc, label::String, plots::Bool)
     end
 end
 
-function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::Float64
+function GA(dim::Int, pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::Float64
     iterations = floor(10000/pop_size)
     range = LinRange(0, 10, 1000)
+
     z = vec([[i,j] for i in range, j in range])
     objfunc = KBF(z)
 
-    popu = pop_initial(range, pop_size)
+    popu = pop_initial(range, pop_size, dim)
     f = KBF(popu)
     scores = Float64[scoring(f)]
     contscatplot(popu, range, objfunc, string(0), plots)
 
     for iter in 1:iterations
-        popu, f = single_iteration(popu, f, crossover, mut_prob)
+        popu, f = single_iteration(dim, popu, f, crossover, mut_prob)
         push!(scores, scoring(f))
         if (iter % 10 == 0) | (iter in 1:10)
             contscatplot(popu, range, objfunc, string(iter), plots)
@@ -40,22 +41,28 @@ function GA(pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::
 end
 
 
-#avg = Matrix{Float64}(undef, (5, 3))
-#for (i, pop) in enumerate(20:20:100)
-#    for (j, mut) in enumerate([0.0001, 0.001, 0.01])
-#        println(pop, mut)
-#        for iter in 1:75
-#            global avg[i, j] += GA(pop, mut, var_locus_crossover, score_top5, false)
-#        end
-#    end
-#end
-#avg ./= 75
-#avg
+avg = Matrix{Float64}(undef, (10, 3))
+stdev = Matrix{Float64}(undef, (10, 3))
+for (i, pop) in enumerate(100:100:1000)
+    for (j, mut) in enumerate([0.0001, 0.001, 0.01])
+        println(pop, mut)
+        scores = Float64[]
+        for iter in 1:75
+            push!(scores, GA(8, 200, 0.005, var_locus_crossover, score_top5, false))
+        end
+        avg[i, j] = mean(scores)
+        stdev[i, j] = std(scores)
+    end
+end
 
-#avg = 0
-#for iter in 1:50 
-#    global avg += GA(200, 0.005, var_locus_crossover, score_top5, false)
-#end
-#println(avg/50)
+println(avg)
+println(stdev)
 
-GA(1000, 0.01, var_locus_crossover, score_top1, true)
+
+
+#scores = Float64[]
+#for iter in 1:100 
+#    push!(scores, GA(8, 200, 0.005, var_locus_crossover, score_top5, false))
+#end
+
+

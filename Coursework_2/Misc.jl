@@ -15,4 +15,4 @@ function ranking(f::Vector{Float64})::Vector{Float64}
     return f_ranks
 end
 
-ranking([1.,4.,5.,6.,7., 1., 4.])
+

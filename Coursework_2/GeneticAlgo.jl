@@ -4,10 +4,10 @@ include("KBFunc.jl")
 include("Misc.jl")
 
 
-function pop_initial(range, pop_size::Int)::Vector{Vector{Float64}}
+function pop_initial(range, pop_size::Int, dim::Int)::Vector{Vector{Float64}}
     pops = Vector{Vector{Float64}}()
     while length(pops) < pop_size
-        sample = vec(rand(range, (2,)))
+        sample = vec(rand(range, (dim,)))
         #if constraint(sample)
         push!(pops, sample)
         #end
@@ -16,18 +16,18 @@ function pop_initial(range, pop_size::Int)::Vector{Vector{Float64}}
 end
 
 
-function score_sum(f::Vector{Float64})::Float64
-    return sum(f) / length(f)
+function score_all(f::Vector{Float64})::Float64
+    return -sum(f) / length(f)
 end
 
 
 function score_top5(f::Vector{Float64})::Float64
-    return sum(partialsort(f , 1:5, rev=true)) / 5
+    return -sum(partialsort(f , 1:5, rev=true)) / 5
 end
 
 
 function score_top1(f::Vector{Float64})::Float64
-    return sum(partialsort(f , 1:1, rev=true))
+    return -sum(partialsort(f , 1:1, rev=true))
 end
 
 
@@ -140,11 +140,11 @@ function mutate(bit1::Char, bit2::Char, mut_prob::Float64)::Tuple{Char, Char}
 end
 
 
-function breed_mut(parent1::Vector{Float64}, parent2::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
-    child1, child2 = String["", ""], String["", ""]
-    child1_final, child2_final = Vector{Float64}(undef, 2), Vector{Float64}(undef, 2)
+function breed_mut(dim::Int, parent1::Vector{Float64}, parent2::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
+    child1, child2 = String["" for dim in 1:dim], String["" for dim in 1:dim]
+    child1_final, child2_final = Vector{Float64}(undef, dim), Vector{Float64}(undef, dim)
     for (index, (parent1_x, parent2_x)) in enumerate(zip(parent1, parent2))
-        locus = rand(1:64)
+        locus = rand(2:64)
         for (pos, (bit1, bit2)) in enumerate(zip(bitstring(parent1_x)[2:end], bitstring(parent2_x)[2:end]))
             bit1, bit2 = crossover(bit1, bit2, pos, locus)
             bit1, bit2 = mutate(bit1, bit2, mut_prob)
@@ -158,7 +158,7 @@ function breed_mut(parent1::Vector{Float64}, parent2::Vector{Float64}, crossover
 end
 
 
-function single_iteration(popu::Vector{Vector{Float64}}, f::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}}
+function single_iteration(dim::Int, popu::Vector{Vector{Float64}}, f::Vector{Float64}, crossover, mut_prob::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}}
     pop_size = length(popu)
     selected_parents_indices = srsw_parents(f) #tournament_parents(f, 15) #roulette_parents(f, prop_Psi)
     new_pop = Vector{Vector{Float64}}()
@@ -168,7 +168,7 @@ function single_iteration(popu::Vector{Vector{Float64}}, f::Vector{Float64}, cro
             pair = 1
         end
         parent1, parent2 = popu[selected_parents_indices[pair]]
-        offspring1, offspring2 = breed_mut(parent1, parent2, crossover, mut_prob)
+        offspring1, offspring2 = breed_mut(dim::Int, parent1, parent2, crossover, mut_prob)
         if constraint(offspring1)  && (length(new_pop) < pop_size)
             push!(new_pop, offspring1)
         end
