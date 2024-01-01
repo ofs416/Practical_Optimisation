@@ -8,15 +8,8 @@ include("GeneticAlgo.jl")
 include("Misc.jl")
 
 
-function contscatplot(popu, range, objfunc, label::String, plots::Bool)
-    if plots
-        contourf(range, range, objfunc, plot_title="Contour Plot", camera=(180, 30), color=:turbo)
-        scatter!(Tuple.(popu), label="Population")
-        savefig("Coursework_2/Figures/iter_" * label * ".png") 
-    end
-end
 
-function GA(dim::Int, pop_size::Int, mut_prob::Float64, crossover, scoring, plots::Bool)::Float64
+function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, crossover, scoring, plots::Bool)
     iterations = floor(10000/pop_size)
     range = LinRange(0, 10, 1000)
 
@@ -29,7 +22,7 @@ function GA(dim::Int, pop_size::Int, mut_prob::Float64, crossover, scoring, plot
     contscatplot(popu, range, objfunc, string(0), plots)
 
     for iter in 1:iterations
-        popu, f = single_iteration(dim, popu, f, crossover, mut_prob)
+        popu, f = single_iteration(dim, popu, f, crossover, p_c, p_m)
         push!(scores, scoring(f))
         if (iter % 10 == 0) | (iter in 1:10)
             contscatplot(popu, range, objfunc, string(iter), plots)
@@ -66,4 +59,4 @@ end
 #    push!(scores, GA(8, 200, 0.005, var_locus_crossover, score_top5, false))
 #end
 
-GA(8, 200, 0.005, var_locus_crossover, score_top5, false)
+GA(2, 500, 0.7, 0.001, var_locus_crossover, score_top1, true)

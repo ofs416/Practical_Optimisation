@@ -41,3 +41,10 @@ function ranking(f::Vector{Float64})::Vector{Float64}
 end
 
 
+function contscatplot(popu, range, objfunc, label::String, plots::Bool)
+    if plots
+        contourf(range, range, objfunc, plot_title="Contour Plot", camera=(180, 30), color=:turbo)
+        scatter!(Tuple.(popu), label="Population")
+        savefig("Coursework_2/Figures/iter_" * label * ".png") 
+    end
+end
