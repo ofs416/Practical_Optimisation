@@ -41,23 +41,26 @@ function PS(dim::Int, pop_size::Int, innertia::Float64, phi_p::Float64, phi_g::F
     z = vec([[i,j] for i in range, j in range])
     objfunc = KBF(z)
 
-    test_swarm = Swarm_Popul(pop_size,dim)
+    test_swarm = Swarm_Popul(pop_size, dim, innertia, phi_p, phi_g)
     scorings = Float64[scoring(test_swarm.val)]
     contscatplot(eachrow(test_swarm.pos), range, objfunc, string(0), plots)
     for iter in 1:iterations
-        test_swarm = update_velocity(test_swarm, innertia, phi_p, phi_g)
+        test_swarm = update_velocity(test_swarm)
         test_swarm = update_positions(test_swarm)
         push!(scorings, scoring(test_swarm.val))
         if (iter % 10 == 0) | (iter in 1:10)
             contscatplot(eachrow(test_swarm.pos), range, objfunc, string(iter), plots)
         end
     end 
-    plot(0:iterations, scorings)
-    savefig("Coursework_2/Figures/f_sum.png") 
+    if plots
+        plot(0:iterations, scorings)
+        savefig("Coursework_2/Figures/f_sum.png") 
+    end
     return scorings[end]
 end
 
-# PS(2, 500, 0.3, 0.48, 0.5, score_top1, true)
+PS(2, 500, 0.3, 0.6, 0.5, score_top1, true)
+#GA(2, 200, 0.65, 0.005, var_locus_crossover, score_top1, true)
 
 #avg = Matrix{Float64}(undef, (10, 3))
 #stdev = Matrix{Float64}(undef, (10, 3))
@@ -78,9 +81,9 @@ end
 
 
 
-scores = Float64[]
-for iter in 1:100 
-    push!(scores, PS(2, 500, 0.3, 0.48, 0.5, score_top1, false))
-end
-println(mean(scores))
+#scores = Float64[]
+#for iter in 1:100 
+#    push!(scores, PS(2, 500, 0.3, 0.48, 0.5, score_top1, false))
+#end
+#println(mean(scores))
 #GA(2, 250, 0.7, 0.001, var_locus_crossover, score_top1, true)
