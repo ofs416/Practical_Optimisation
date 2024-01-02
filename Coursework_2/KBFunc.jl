@@ -7,12 +7,11 @@ function constraint(x::Vector{Float64})::Bool
     return all(x-> 0<=x<=10, x) && (sum(x) < 7.5*dim) && (prod(x) > 0.75)
 end
 
-
 # Kean's Bump Funtion
 function KBF(points::Union{Matrix{Float64}, Vector{Vector{Float64}}})::Vector{Float64}
     cost = Float64[]
     if typeof(points) == Vector{Vector{Float64}}
-        mapreduce(permutedims, vcat, points)
+        points = mapreduce(permutedims, vcat, points)
     end
     for x in eachrow(points) 
         x = vec(copy(x))
@@ -22,7 +21,7 @@ function KBF(points::Union{Matrix{Float64}, Vector{Vector{Float64}}})::Vector{Fl
             denom = sqrt(sum([index*num^2 for (index, num) in enumerate(x)]))
             push!(cost, num/denom)
         else 
-            push!(cost, -1)
+            push!(cost, 0)
         end
     end
     return cost

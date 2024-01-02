@@ -172,3 +172,28 @@ function single_iteration(popu::GA_Popul, crossover, p_c::Float64, p_m::Float64)
     new_popu = GA_Popul(popu.pop_size, popu.pop_dim, new_pop)
     return new_popu
 end
+
+
+function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, crossover, scoring, plots::Bool)
+    iterations = floor(10000/pop_size)
+    range = LinRange(0, 10, 1000)
+
+    z = vec([[i,j] for i in range, j in range])
+    objfunc = KBF(z)
+
+    popu = GA_Popul(pop_size, dim)
+    scorings = Float64[scoring(popu.scores)]
+    contscatplot(popu.positions, range, objfunc, string(0), plots)
+
+    for iter in 1:iterations
+        popu = single_iteration(popu, crossover, p_c, p_m)
+        push!(scorings, scoring(popu.scores))
+        if (iter % 10 == 0) | (iter in 1:10)
+            contscatplot(popu.positions, range, objfunc, string(iter), plots)
+        end
+    end
+    contscatplot(popu.positions, range, objfunc, "final", plots)
+    plot(0:iterations, scorings)
+    savefig("Figures\\f_sum.png") 
+    return scorings[end]
+end

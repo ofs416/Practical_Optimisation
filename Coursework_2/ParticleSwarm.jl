@@ -58,3 +58,27 @@ function update_positions(swarm::Swarm_Popul)::Swarm_Popul
 end
 
 
+function PS(dim::Int, pop_size::Int, innertia::Float64, phi_p::Float64, phi_g::Float64, scoring, plots::Bool)
+    iterations = floor(10000/pop_size)
+    range = LinRange(-2, 12, 1000)
+    z = vec([[i,j] for i in range, j in range])
+    objfunc = KBF(z)
+
+    test_swarm = Swarm_Popul(pop_size, dim, innertia, phi_p, phi_g)
+    scorings = Float64[scoring(test_swarm.val)]
+    contscatplot(eachrow(test_swarm.pos), range, objfunc, string(0), plots)
+    for iter in 1:iterations
+        test_swarm = update_velocity(test_swarm)
+        test_swarm = update_positions(test_swarm)
+        push!(scorings, scoring(test_swarm.val))
+        if (iter % 10 == 0) | (iter in 1:10)
+            contscatplot(eachrow(test_swarm.pos), range, objfunc, string(iter), plots)
+        end
+    end 
+    if plots
+        plot(0:iterations, scorings)
+        savefig("Figures\\f_sum.png") 
+    end
+    return scorings[end]
+end
+

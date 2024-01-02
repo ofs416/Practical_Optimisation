@@ -50,6 +50,6 @@ function contscatplot(pos, range, objfunc, label::String, plots::Bool)
     if plots
         contourf(range, range, objfunc, plot_title="Contour Plot", camera=(180, 30), color=:turbo)
         scatter!(Tuple.(pos), label="Population")
-        savefig("Coursework_2/Figures/iter_" * label * ".png") 
+        savefig("Figures\\iter_" * label * ".png") 
     end
 end
