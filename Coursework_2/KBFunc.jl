@@ -22,3 +22,20 @@ function KBF(points::Vector{Vector{Float64}})::Vector{Float64}
     end
     return cost
 end
+
+# Kean's Bump Funtion
+function KBFM(points::Matrix{Float64})::Vector{Float64}
+    cost = Float64[]
+    for x in eachrow(points) 
+        x = vec(copy(x))
+        if constraint(x) 
+            cosargs =  cos.(x)
+            num =  sum(cosargs .^4) - 2prod(cosargs .^2)
+            denom = sqrt(sum([index*num^2 for (index, num) in enumerate(x)]))
+            push!(cost, num/denom)
+        else 
+            push!(cost, -1)
+        end
+    end
+    return cost
+end

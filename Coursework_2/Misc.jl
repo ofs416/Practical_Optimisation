@@ -27,6 +27,11 @@ function pop_initial(range, pop_size::Int, dim::Int)::Vector{Vector{Float64}}
 end
 
 
+function swarm_initial(range, pop_size::Int, dim::Int)::Matrix{Float64}
+    return rand(range, (pop_size,dim))
+end
+
+
 function ranking(f::Vector{Float64})::Vector{Float64}
     ordered_f = sort(f , rev=true)
     f_ranks = Int[]
@@ -41,10 +46,10 @@ function ranking(f::Vector{Float64})::Vector{Float64}
 end
 
 
-function contscatplot(popu, range, objfunc, label::String, plots::Bool)
+function contscatplot(pos, range, objfunc, label::String, plots::Bool)
     if plots
         contourf(range, range, objfunc, plot_title="Contour Plot", camera=(180, 30), color=:turbo)
-        scatter!(Tuple.(popu), label="Population")
+        scatter!(Tuple.(pos), label="Population")
         savefig("Coursework_2/Figures/iter_" * label * ".png") 
     end
 end

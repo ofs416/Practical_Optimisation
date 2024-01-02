@@ -4,6 +4,25 @@ include("KBFunc.jl")
 include("Misc.jl")
 
 
+struct GA_Popul
+    pop_size::Int
+    pop_dim::Int
+    positions::Vector{Vector{Float64}}
+    scores::Vector{Float64}
+
+    function GA_Popul(pop_size, pop_dim)
+        positions = pop_initial(LinRange(0, 10, 1000), pop_size, pop_dim)
+        scores = KBF(positions)
+        return new(pop_size, pop_dim, positions, scores)
+    end 
+
+    function GA_Popul(pop_size, pop_dim, positions)
+        scores = KBF(positions)
+        return new(pop_size, pop_dim, positions, scores)
+    end 
+end
+
+
 function prop_Psi(f::Vector{Float64})::Vector{Float64}
     f_Σ = sum(f)
     prob = f ./ f_Σ
@@ -40,9 +59,6 @@ function roulette_parents(f::Vector{Float64}, prob_method)::Vector{Vector{Int64}
     p_si = prob_method(f)
     parents = sample(1:length(f), Weights(p_si), (2,50))
     parents = [[a,b] for (a,b) in eachcol(parents)]
-    #if 1 in [argmax(f) in pair for pair in parents] == false
-    #    pair[1] = [argmax(f), rand(dist, (2, 1))]
-    #end 
     return parents
 end
 
@@ -113,8 +129,9 @@ function mutate(bit1::Char, bit2::Char, p_m::Float64)::Tuple{Char, Char}
 end
 
 
-function breed_mut(dim::Int, parent1::Vector{Float64}, parent2::Vector{Float64}, crossover, p_c::Float64,p_m::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
-    child1, child2 = String["" for dim in 1:dim], String["" for dim in 1:dim]
+function breed_mut(parent1::Vector{Float64}, parent2::Vector{Float64}, crossover, p_c::Float64,p_m::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
+    dim = length(parent1)
+    child1, child2 = String["" for i in 1:dim], String["" for j in 1:dim]
     child1_final, child2_final = Vector{Float64}(undef, dim), Vector{Float64}(undef, dim)
     crossover_flag = sample([0, 1], Weights([1-p_c, p_c]))
     for (index, (parent1_x, parent2_x)) in enumerate(zip(parent1, parent2))
@@ -134,24 +151,24 @@ function breed_mut(dim::Int, parent1::Vector{Float64}, parent2::Vector{Float64},
 end
 
 
-function single_iteration(dim::Int, popu::Vector{Vector{Float64}}, f::Vector{Float64}, crossover, p_c::Float64, p_m::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}}
-    pop_size = length(popu)
-    selected_parents_indices = srsw_parents(f) #tournament_parents(f, 15) #roulette_parents(f, prop_Psi)
+function single_iteration(popu::GA_Popul, crossover, p_c::Float64, p_m::Float64)::GA_Popul
+    selected_parents_indices = srsw_parents(popu.scores) #tournament_parents(f, 15) #roulette_parents(f, prop_Psi)
     new_pop = Vector{Vector{Float64}}()
     pair = 1
-    while length(new_pop) < pop_size
+    while length(new_pop) < popu.pop_size
         if pair > length(selected_parents_indices)
             pair = 1
         end
-        parent1, parent2 = popu[selected_parents_indices[pair]]
-        offspring1, offspring2 = breed_mut(dim::Int, parent1, parent2, crossover, p_c, p_m)
-        if constraint(offspring1)  && (length(new_pop) < pop_size)
+        parent1, parent2 = popu.positions[selected_parents_indices[pair]]
+        offspring1, offspring2 = breed_mut(parent1, parent2, crossover, p_c, p_m)
+        if constraint(offspring1)  && (length(new_pop) < popu.pop_size)
             push!(new_pop, offspring1)
         end
-        if constraint(offspring2) && (length(new_pop) < pop_size)
+        if constraint(offspring2) && (length(new_pop) < popu.pop_size)
             push!(new_pop, offspring2)
         end
         pair += 1
     end
-    return new_pop, KBF(new_pop)
+    new_popu = GA_Popul(popu.pop_size, popu.pop_dim, new_pop)
+    return new_popu
 end
