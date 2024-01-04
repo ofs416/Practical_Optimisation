@@ -12,6 +12,11 @@ function score_top5(f::Vector{Float64})::Float64
 end
 
 
+function score_top10(f::Vector{Float64})::Float64
+    return -sum(partialsort(f , 1:10, rev=true)) / 10
+end
+
+
 function score_top1(f::Vector{Float64})::Float64
     return -sum(partialsort(f , 1:1, rev=true))
 end
@@ -45,6 +50,28 @@ function ranking(f::Vector{Float64})::Vector{Float64}
     return f_ranks
 end
 
+
+function update_archives(pos_archive, val_archive, val, pos)
+
+    norms = sum(norm.(pos_archive .- pos'), dims=2)
+    D_min = 2
+    D_sim = 0.2
+
+    if any(x-> x<val, val_archive) && all(x-> x>D_min ,norms)
+        val_archive[argmin(val_archive)] = val
+        pos_archive[argmin(val_archive)[1], :] = pos
+    elseif all(x-> x<val, val_archive) 
+        val_archive[argmin(norms)] = val
+        pos_archive[argmin(norms)[1], :] = pos
+    else
+        loc = findfirst(x->x==1, (norms .< D_sim) .& (val_archive .< val))
+        if loc !== nothing
+            val_archive[loc[1]] = val
+            pos_archive[loc[1], :] = pos
+        end
+    end
+    return pos_archive, val_archive
+end
 
 function contscatplot(pos, range, objfunc, label::String, plots::Bool)
     if plots
