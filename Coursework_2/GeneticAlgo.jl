@@ -20,6 +20,10 @@ struct GA_Popul
         scores = KBF(positions)
         return new(pop_size, pop_dim, positions, scores)
     end 
+
+    function GA_Popul(pop_size, pop_dim, positions, scores)
+        return new(pop_size, pop_dim, positions, scores)
+    end 
 end
 
 
