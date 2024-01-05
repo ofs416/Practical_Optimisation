@@ -1,7 +1,9 @@
 using Printf
-using Statistics, Distributions
+using Statistics, StatsBase, Distributions
 using Plots
 using BenchmarkTools
+using LinearAlgebra
+using Random
 
 include("KBFunc.jl")
 include("GeneticAlgo.jl")
@@ -38,7 +40,8 @@ function SGAPSO(
             swarm = update_pos_archives(swarm)
             swarm = update_hparams(swarm, iterations)
             vec_pos = [row[:] for row in eachrow(swarm.pos)]
-            gapopu = GA_Popul(pop_size, dim, vec_pos, swarm.val)
+            gapopu.positions = vec_pos
+            gapopu.scores = swarm.val
         else
             swarm = update_velocity(swarm)
             gapopu = single_iteration(gapopu, crossover, p_c, p_m)
@@ -85,21 +88,21 @@ function PGAPSO(
     contscatplot(eachrow(swarm.pos), range, objfunc, string(0), plots)
 
     for iter in 1:iterations
-        sampleindex = sample(1:pop_size, (2, floor(Int,pop_size/2)), replace=false)
+      
+        sampleindex = shuffle(1:pop_size)
+        split = floor(Int, pop_size * 0.9)
         swarm = update_velocity(swarm)
 
-        vec_pos = [row[:] for row in eachrow(swarm.pos[sampleindex[1,:], :])]
-        gapopu = GA_Popul(floor(Int,pop_size/2), dim, vec_pos, swarm.val[sampleindex[1,:]])
+        vec_pos = [row[:] for row in eachrow(swarm.pos[sampleindex[(split+1):pop_size], :])]
+        gapopu = GA_Popul(floor(Int,pop_size* 0.1), dim, vec_pos, swarm.val[sampleindex[(split+1):pop_size]])
         gapopu = single_iteration(gapopu, crossover, p_c, p_m)
-        swarm.pos[sampleindex[1,:], :] = mapreduce(permutedims, vcat, gapopu.positions) 
-
-        swarm.pos[sampleindex[2,:], :] = max.(min.(swarm.pos[sampleindex[2,:], :] + 
-                                                   swarm.vels[sampleindex[2,:], :], 10), 0)  
-        
+        swarm.pos[sampleindex[(split+1):pop_size], :] = mapreduce(permutedims, vcat, gapopu.positions) 
+   
+        swarm.pos[sampleindex[1:split], :] = max.(min.(swarm.pos[sampleindex[1:split], :] + 
+                                                   swarm.vels[sampleindex[1:split], :], 10), 0)
         swarm.val = KBF(swarm.pos)
         swarm = update_pos_archives(swarm)
         swarm = update_hparams(swarm, iterations)
-
     
         push!(archive_scorings, score_top1(vec(swarm.val_archive)))
         push!(swarm1_scorings, score_top1(swarm.val))

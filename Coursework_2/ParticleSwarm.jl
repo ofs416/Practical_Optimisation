@@ -50,7 +50,7 @@ function update_velocity(swarm::Swarm_Popul)::Swarm_Popul
                      (swarm.part_best_pos[1] - swarm.pos)
     swarm.social_temp = swarm.phi_g .* rand(0:0.00001:1, swarm.pop_size, swarm.pop_dim) .* 
                         (reshape(swarm.sw_best_pos[1], (1, swarm.pop_dim)) .- swarm.pos)
-    swarm.vels = max.(min.(swarm.innertia_temp  + swarm.cog_temp + swarm.social_temp, 4), -4)
+    swarm.vels = max.(min.(swarm.innertia_temp  + swarm.cog_temp + swarm.social_temp, 3), -3)
     return swarm
 end
 

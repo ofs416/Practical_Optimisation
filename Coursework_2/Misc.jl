@@ -1,5 +1,6 @@
 using Printf
-using Statistics
+using Statistics, StatsBase, Distributions
+using LinearAlgebra
 
 
 function score_all(f::Vector{Float64})::Float64

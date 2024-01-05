@@ -1,10 +1,10 @@
-using Statistics, StatsBase
+using Statistics, StatsBase, Distributions, LinearAlgebra
 
 include("KBFunc.jl")
 include("Misc.jl")
 
 
-struct GA_Popul
+mutable struct GA_Popul
     pop_size::Int
     pop_dim::Int
     positions::Vector{Vector{Float64}}
@@ -121,15 +121,9 @@ function var_rand_crossover(bit1::Char, bit2::Char, args...)::Tuple{Char, Char}
 end
 
 
-function mutate(bit1::Char, bit2::Char, p_m::Float64)::Tuple{Char, Char}
-    rand_num = sample(1:2, Weights([1.0-p_m, p_m]), 2)
-    if rand_num[1] == 2
-        bit1 = only(string(1 - parse(Int, bit1)))
-    end
-    if rand_num[2] == 2
-        bit2 = only(string(1 - parse(Int, bit2)))
-    end
-    return bit1, bit2
+function mutate(bit::Char, p_m::Float64)::Char
+    bit = (sample(1:2, Weights([1.0-p_m, p_m])) == 2) & (bit == '1') ? '0' : '1'
+    return bit
 end
 
 
@@ -144,7 +138,7 @@ function breed_mut(parent1::Vector{Float64}, parent2::Vector{Float64}, crossover
             if crossover_flag == 1
                 bit1, bit2 = crossover(bit1, bit2, pos, locus)
             end
-            bit1, bit2 = mutate(bit1, bit2, p_m)
+            #bit1, bit2 = mutate(bit1, p_m), mutate(bit2, p_m)
             child1[index] = child1[index] * bit1
             child2[index] = child2[index] * bit2
         end
@@ -173,31 +167,40 @@ function single_iteration(popu::GA_Popul, crossover, p_c::Float64, p_m::Float64)
         end
         pair += 1
     end
-    new_popu = GA_Popul(popu.pop_size, popu.pop_dim, new_pop)
-    return new_popu
+    popu.positions = new_pop
+    popu.scores = KBF(new_pop)
+    return popu
 end
 
 
-function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, crossover, scoring, plots::Bool)
+function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, crossover, plots::Bool)
     iterations = floor(10000/pop_size)
     range = LinRange(0, 10, 1000)
-
-    z = vec([[i,j] for i in range, j in range])
-    objfunc = KBF(z)
-
+    if plots
+        objfunc = KBF(vec([[i,j] for i in range, j in range]))
+    else  
+        objfunc = Vector()
+    end  
     popu = GA_Popul(pop_size, dim)
-    scorings = Float64[scoring(popu.scores)]
+    pos_archive, val_archive = rand(15.:15., 10, dim), rand(0.:0., 10,1)
+    archive_scorings = Float64[score_top1(popu.scores)]
+    ga1_scorings = Float64[score_top1(popu.scores)]
+    ga10_scorings = Float64[score_top10(popu.scores)]
     contscatplot(popu.positions, range, objfunc, string(0), plots)
-
     for iter in 1:iterations
         popu = single_iteration(popu, crossover, p_c, p_m)
-        push!(scorings, scoring(popu.scores))
+        for (val, pos) in zip(popu.scores, popu.positions)
+            pos_archive, val_archive = update_archives(pos_archive, val_archive, val, pos)
+        end
         if (iter % 10 == 0) | (iter in 1:10)
             contscatplot(popu.positions, range, objfunc, string(iter), plots)
         end
+        push!(archive_scorings, score_top1(vec(val_archive)))
+        push!(ga1_scorings, score_top1(popu.scores))
+        push!(ga10_scorings, score_top10(popu.scores))
     end
-    contscatplot(popu.positions, range, objfunc, "final", plots)
-    plot(0:iterations, scorings)
+    contscatplot(eachrow(pos_archive), range, objfunc, "archive", plots)
+    plot(0:iterations, [archive_scorings, ga1_scorings, ga10_scorings])
     savefig("Figures\\f_sum.png") 
-    return scorings[end]
+    return [archive_scorings[end], ga1_scorings[end], ga10_scorings[end]]
 end
