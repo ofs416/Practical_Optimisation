@@ -13,8 +13,7 @@ include("ParticleSwarm.jl")
 
 function SGAPSO(
                 dim::Int, pop_size::Int, innertia::Float64, phi_p::Float64,
-                phi_g::Float64, p_c::Float64, p_m::Float64, crossover,
-                plots::Bool
+                phi_g::Float64, p_c::Float64, p_m::Float64, plots::Bool
                 )
     iterations = floor(Int, 10000/pop_size)
     range = LinRange(-2, 12, 1000)
@@ -44,7 +43,7 @@ function SGAPSO(
             gapopu.scores = swarm.val
         else
             swarm = update_velocity(swarm)
-            gapopu = single_iteration(gapopu, crossover, p_c, p_m)
+            gapopu = single_iteration(gapopu, p_c, p_m)
             swarm.pos = mapreduce(permutedims, vcat, gapopu.positions) 
             swarm.val = gapopu.scores
             swarm = update_pos_archives(swarm)
@@ -70,11 +69,10 @@ end
 
 function PGAPSO(
     dim::Int, pop_size::Int, innertia::Float64, phi_p::Float64,
-    phi_g::Float64, p_c::Float64, p_m::Float64, crossover,
-    plots::Bool
+    phi_g::Float64, p_c::Float64, p_m::Float64, plots::Bool
     )
     iterations = floor(Int, 10000/pop_size)
-    range = LinRange(-2, 12, 1000)
+    range = LinRange(0, 10, 1000)
     if plots
         objfunc = KBF(vec([[i,j] for i in range, j in range]))
     else  
@@ -89,17 +87,15 @@ function PGAPSO(
 
     for iter in 1:iterations
       
-        sampleindex = shuffle(1:pop_size)
-        split = floor(Int, pop_size * 0.9)
+        sampleindex = sortperm(swarm.val, rev=true)#shuffle(1:pop_size)
+        split = floor(Int, pop_size * 0.3)
         swarm = update_velocity(swarm)
 
         vec_pos = [row[:] for row in eachrow(swarm.pos[sampleindex[(split+1):pop_size], :])]
-        gapopu = GA_Popul(floor(Int,pop_size* 0.1), dim, vec_pos, swarm.val[sampleindex[(split+1):pop_size]])
-        gapopu = single_iteration(gapopu, crossover, p_c, p_m)
+        gapopu = GA_Popul(floor(Int,pop_size* 0.7), dim, vec_pos, swarm.val[sampleindex[(split+1):pop_size]])
+        gapopu = single_iteration(gapopu, p_c, p_m)
         swarm.pos[sampleindex[(split+1):pop_size], :] = mapreduce(permutedims, vcat, gapopu.positions) 
-   
-        swarm.pos[sampleindex[1:split], :] = max.(min.(swarm.pos[sampleindex[1:split], :] + 
-                                                   swarm.vels[sampleindex[1:split], :], 10), 0)
+        swarm.pos[sampleindex[1:split], :] = max.(min.(swarm.pos[sampleindex[1:split], :] + swarm.vels[sampleindex[1:split], :], 10), 0)
         swarm.val = KBF(swarm.pos)
         swarm = update_pos_archives(swarm)
         swarm = update_hparams(swarm, iterations)
@@ -117,5 +113,6 @@ function PGAPSO(
     plot(0:iterations, [archive_scorings, swarm1_scorings, swarm10_scorings])
     savefig("Figures\\f_sum.png") 
 
+    println("Complete")
     return [archive_scorings[end], swarm1_scorings[end], swarm10_scorings[end]]
 end

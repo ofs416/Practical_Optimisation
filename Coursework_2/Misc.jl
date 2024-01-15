@@ -38,7 +38,7 @@ function swarm_initial(range, pop_size::Int, dim::Int)::Matrix{Float64}
 end
 
 
-function ranking(f::Vector{Float64})::Vector{Float64}
+function ranking(f::Vector{Float64})::Array{Int}
     ordered_f = sort(f , rev=true)
     f_ranks = Int[]
     for i in f

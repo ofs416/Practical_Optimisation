@@ -84,7 +84,7 @@ end
 function srsw_parents(f::Vector{Float64})::Vector{Vector{Int64}}
     pop_size = length(f)
     parents = Vector{Vector{Int}}()
-    e_i = prop_Psi(f) .* pop_size
+    e_i = prop_Psi(f) .* pop_size 
     while (length(parents) < floor(pop_size/2))
         parent11 = srswr(e_i, pop_size)
         parent22 = srswr(e_i, pop_size)
@@ -102,16 +102,14 @@ function locus_crossover(bit1::Char, bit2::Char, pos::Int, locus::Int)::Tuple{Ch
     return bit1, bit2
 end
 
-
-function var_locus_crossover(bit1::Char, bit2::Char, pos::Int, locus::Int)::Tuple{Char, Char}
-    if bit1 != bit2
-        bit1, bit2 = locus_crossover(bit1, bit2, pos, locus)
+function loci_crossover(bit1::Char, bit2::Char, pos::Int, loci1::Int, loci2::Int)::Tuple{Char, Char}
+    if (loci1 < pos <= loci2)
+        bit1, bit2 = bit2, bit1 
     end
     return bit1, bit2
 end
 
-
-function var_rand_crossover(bit1::Char, bit2::Char, args...)::Tuple{Char, Char}
+function rand_crossover(bit1::Char, bit2::Char)::Tuple{Char, Char}
     if bit1 != bit2
         temp = rand(0:1)
         bit1 = only(string(temp))
@@ -121,35 +119,39 @@ function var_rand_crossover(bit1::Char, bit2::Char, args...)::Tuple{Char, Char}
 end
 
 
-function mutate(bit::Char, p_m::Float64)::Char
-    bit = (sample(1:2, Weights([1.0-p_m, p_m])) == 2) & (bit == '1') ? '0' : '1'
-    return bit
-end
-
-
-function breed_mut(parent1::Vector{Float64}, parent2::Vector{Float64}, crossover, p_c::Float64,p_m::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
-    dim = length(parent1)
-    child1, child2 = String["" for i in 1:dim], String["" for j in 1:dim]
-    child1_final, child2_final = Vector{Float64}(undef, dim), Vector{Float64}(undef, dim)
-    crossover_flag = sample([0, 1], Weights([1-p_c, p_c]))
-    for (index, (parent1_x, parent2_x)) in enumerate(zip(parent1, parent2))
-        locus = rand(2:64)
-        for (pos, (bit1, bit2)) in enumerate(zip(bitstring(parent1_x)[2:end], bitstring(parent2_x)[2:end]))
-            if crossover_flag == 1
-                bit1, bit2 = crossover(bit1, bit2, pos, locus)
+function bin_breed(parent1::Vector{Float64}, parent2::Vector{Float64}, p_c::Float64
+                    )::Tuple{Vector{Float64}, Vector{Float64}}
+    if sample([0, 1], Weights([1-p_c, p_c])) == 1
+        dim = length(parent1)
+        child1, child2 = String["" for i in 1:dim], String["" for j in 1:dim]
+        child1_final, child2_final = Vector{Float64}(undef, dim), Vector{Float64}(undef, dim)
+        for (index, (parent1_x, parent2_x)) in enumerate(zip(parent1, parent2))
+            locus1 = rand(2:50)
+            locus2 = rand((locus1+1):64)
+            for (pos, (bit1, bit2)) in enumerate(zip(bitstring(parent1_x)[2:end], bitstring(parent2_x)[2:end]))
+                bit1, bit2 = loci_crossover(bit1, bit2, pos, locus1, locus2)
+                child1[index] = child1[index] * bit1
+                child2[index] = child2[index] * bit2
             end
-            #bit1, bit2 = mutate(bit1, p_m), mutate(bit2, p_m)
-            child1[index] = child1[index] * bit1
-            child2[index] = child2[index] * bit2
+            child1_final[index] = reinterpret(Float64, parse(Int, child1[index], base=2))
+            child2_final[index] = reinterpret(Float64, parse(Int, child2[index], base=2))
         end
-        child1_final[index] = reinterpret(Float64, parse(Int, child1[index], base=2))
-        child2_final[index] = reinterpret(Float64, parse(Int, child2[index], base=2))
+        return child1_final, child2_final
+    else
+        return parent1, parent2
     end
-    return child1_final, child2_final
 end
 
 
-function single_iteration(popu::GA_Popul, crossover, p_c::Float64, p_m::Float64)::GA_Popul
+function cont_mutate(offspring::Vector{Float64}, p_m::Float64)::Vector{Float64}
+    if sample(1:2, Weights([1.0-p_m, p_m])) == 2
+        offspring = rand(0.:0.0001:10., length(offspring)) #length(offspring)*randn(length(offspring))/2 #
+    end
+    return offspring
+end
+
+
+function single_iteration(popu::GA_Popul, p_c::Float64, p_m::Float64)::GA_Popul
     selected_parents_indices = srsw_parents(popu.scores) #tournament_parents(f, 15) #roulette_parents(f, prop_Psi)
     new_pop = Vector{Vector{Float64}}()
     pair = 1
@@ -158,7 +160,8 @@ function single_iteration(popu::GA_Popul, crossover, p_c::Float64, p_m::Float64)
             pair = 1
         end
         parent1, parent2 = popu.positions[selected_parents_indices[pair]]
-        offspring1, offspring2 = breed_mut(parent1, parent2, crossover, p_c, p_m)
+        offspring1, offspring2 = bin_breed(parent1, parent2, p_c)
+        ofs1, ofs2 = cont_mutate(offspring1, p_m), cont_mutate(offspring2, p_m)
         if constraint(offspring1)  && (length(new_pop) < popu.pop_size)
             push!(new_pop, offspring1)
         end
@@ -173,7 +176,7 @@ function single_iteration(popu::GA_Popul, crossover, p_c::Float64, p_m::Float64)
 end
 
 
-function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, crossover, plots::Bool)
+function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, plots::Bool)
     iterations = floor(10000/pop_size)
     range = LinRange(0, 10, 1000)
     if plots
@@ -188,7 +191,7 @@ function GA(dim::Int, pop_size::Int, p_c::Float64, p_m::Float64, crossover, plot
     ga10_scorings = Float64[score_top10(popu.scores)]
     contscatplot(popu.positions, range, objfunc, string(0), plots)
     for iter in 1:iterations
-        popu = single_iteration(popu, crossover, p_c, p_m)
+        popu = single_iteration(popu, p_c, p_m)
         for (val, pos) in zip(popu.scores, popu.positions)
             pos_archive, val_archive = update_archives(pos_archive, val_archive, val, pos)
         end
