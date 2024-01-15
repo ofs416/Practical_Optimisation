@@ -87,12 +87,12 @@ function PGAPSO(
 
     for iter in 1:iterations
       
-        sampleindex = sortperm(swarm.val, rev=true)#shuffle(1:pop_size)
-        split = floor(Int, pop_size * 0.3)
+        sampleindex = sortperm(swarm.val, rev=false)#shuffle(1:pop_size)
+        split = floor(Int, pop_size * 0.2)
         swarm = update_velocity(swarm)
 
         vec_pos = [row[:] for row in eachrow(swarm.pos[sampleindex[(split+1):pop_size], :])]
-        gapopu = GA_Popul(floor(Int,pop_size* 0.7), dim, vec_pos, swarm.val[sampleindex[(split+1):pop_size]])
+        gapopu = GA_Popul(floor(Int,pop_size* 0.8), dim, vec_pos, swarm.val[sampleindex[(split+1):pop_size]])
         gapopu = single_iteration(gapopu, p_c, p_m)
         swarm.pos[sampleindex[(split+1):pop_size], :] = mapreduce(permutedims, vcat, gapopu.positions) 
         swarm.pos[sampleindex[1:split], :] = max.(min.(swarm.pos[sampleindex[1:split], :] + swarm.vels[sampleindex[1:split], :], 10), 0)

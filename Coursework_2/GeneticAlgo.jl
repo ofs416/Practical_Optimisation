@@ -143,16 +143,33 @@ function bin_breed(parent1::Vector{Float64}, parent2::Vector{Float64}, p_c::Floa
 end
 
 
+function cont_breed(parent1::Vector{Float64}, parent2::Vector{Float64}, p_c::Float64
+    )::Tuple{Vector{Float64}, Vector{Float64}}
+    if sample([0, 1], Weights([1-p_c, p_c])) == 1
+        dim = length(parent1)
+        u = rand(0:0.001:1, dim)
+        beta = Vector(undef, dim)
+        beta[u .<= 0.5] = (2 .* u[u .<= 0.5]) .^ (1/3)
+        beta[u .> 0.5] = (0.5 ./ (1 .- u[u .> 0.5])) .^(1/3)
+        child1_final = 0.5 .* ((1 .+ beta) .* parent1 + (1 .- beta) .* parent2)
+        child2_final = 0.5 .* ((1 .- beta) .* parent1 + (1 .+ beta) .* parent2)
+        return child1_final, child2_final
+    else
+        return parent1, parent2
+    end    
+end
+
+
 function cont_mutate(offspring::Vector{Float64}, p_m::Float64)::Vector{Float64}
     if sample(1:2, Weights([1.0-p_m, p_m])) == 2
-        offspring = rand(0.:0.0001:10., length(offspring)) #length(offspring)*randn(length(offspring))/2 #
+        offspring += 2 .* randn(length(offspring)) #rand(0.:0.0001:10., length(offspring))
     end
     return offspring
 end
 
 
 function single_iteration(popu::GA_Popul, p_c::Float64, p_m::Float64)::GA_Popul
-    selected_parents_indices = srsw_parents(popu.scores) #tournament_parents(f, 15) #roulette_parents(f, prop_Psi)
+    selected_parents_indices = tournament_parents(popu.scores, 15) #srsw_parents(popu.scores) #roulette_parents(f, prop_Psi)
     new_pop = Vector{Vector{Float64}}()
     pair = 1
     while length(new_pop) < popu.pop_size
@@ -160,8 +177,8 @@ function single_iteration(popu::GA_Popul, p_c::Float64, p_m::Float64)::GA_Popul
             pair = 1
         end
         parent1, parent2 = popu.positions[selected_parents_indices[pair]]
-        offspring1, offspring2 = bin_breed(parent1, parent2, p_c)
-        ofs1, ofs2 = cont_mutate(offspring1, p_m), cont_mutate(offspring2, p_m)
+        ofs1, ofs2 = cont_breed(parent1, parent2, p_c)
+        offspring1, offspring2 = cont_mutate(ofs1, p_m), cont_mutate(ofs2, p_m)
         if constraint(offspring1)  && (length(new_pop) < popu.pop_size)
             push!(new_pop, offspring1)
         end
